@@ -1,0 +1,42 @@
+{
+  "lastSyncAt": "2026-09-06T05:12:52.126Z",
+  "lastVerifiedAt": "2026-09-06T05:12:52.126Z",
+  "lastStatus": "ok",
+  "lastMessage": "近24小时核验完成：拉取有效 111 条，新增 0，修订 0，跳过过期约 189",
+  "lastFetched": 111,
+  "lastAdded": 0,
+  "lastUpdated": 0,
+  "lastSkippedOld": 189,
+  "feeds": [
+    {
+      "url": "https://www.people.com.cn/rss/politics.xml",
+      "ok": true,
+      "message": "近24h 0 条（跳过过期 80）"
+    },
+    {
+      "url": "http://www.people.com.cn/rss/politics.xml",
+      "ok": true,
+      "message": "近24h 0 条（跳过过期 80）"
+    },
+    {
+      "url": "https://www.chinanews.com.cn/rss/scroll-news.xml",
+      "ok": true,
+      "message": "近24h 30 条（跳过过期 0）"
+    },
+    {
+      "url": "https://www.chinanews.com.cn/rss/importnews.xml",
+      "ok": true,
+      "message": "近24h 30 条（跳过过期 0）"
+    },
+    {
+      "url": "https://feedx.net/rss/people.xml",
+      "ok": true,
+      "message": "近24h 51 条（跳过过期 29）"
+    },
+    {
+      "url": "https://www.zhihu.com/rss",
+      "ok": false,
+      "message": "无法解析 RSS channel"
+    }
+  ]
+}
