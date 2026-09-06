@@ -52,7 +52,7 @@ export default function RootLayout({
           <main>{children}</main>
           <footer className="mt-16 border-t border-slate-200 bg-white/70">
             <div className="mx-auto max-w-6xl px-4 py-8 text-sm text-slate-500">
-              <p>考研政治 · 时政月鉴 — 本地 JSON 持久化，RSS 自动同步，独立于 ChatGPT / Grok 运行。</p>
+              <p>考研政治 · 时政月鉴 — GitHub Pages 静态站，Actions 每日同步 JSON，独立于大模型运行。</p>
               <p className="mt-1">仅供学习整理参考，请以官方教材与权威报道为准。</p>
             </div>
           </footer>

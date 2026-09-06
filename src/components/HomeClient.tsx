@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import type { Affair, Anniversary, ModuleTag, SyncMeta } from "@/lib/types";
 import { MODULE_TAGS } from "@/lib/types";
+import { mediaUrl } from "@/lib/basePath";
 
 interface Props {
   affairs: Affair[];
@@ -92,7 +93,7 @@ export default function HomeClient({
                 汇集近 24
                 小时权威时政与重大周年节点，按史纲 / 毛中特 / 思修 / 形策 /
                 习思想筛选。站点以 JSON
-                文件持久化，同一公开 URL 经 Cron 同步即可自动更新，运行时不依赖大模型。
+                文件持久化；GitHub Actions 每日同步后部署到同一 Pages URL，运行时不依赖大模型。
               </p>
               <div className="mt-5 flex flex-wrap gap-3">
                 <a
@@ -341,7 +342,7 @@ export default function HomeClient({
                   {a.imageUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
-                      src={a.imageUrl}
+                      src={mediaUrl(a.imageUrl)}
                       alt=""
                       className="h-28 w-full rounded-lg object-cover md:h-24 md:w-36"
                     />

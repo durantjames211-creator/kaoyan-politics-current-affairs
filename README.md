@@ -2,44 +2,65 @@
 
 独立运行的考研政治时政与周年专题学习站。
 运行时不依赖大模型，内容来自公开 RSS 与本地 JSON。
+面向 GitHub Pages 静态托管 + GitHub Actions 每日同步（无需 Vercel、无需手机）。
 
-## 快速开始
+## 公开地址
 
-1. 复制 .env.example 为 .env.local
-2. 安装依赖并启动开发服务（见 package.json scripts: install / dev）
-3. 打开 http://localhost:3000 ；管理台 /admin
-4. 生产构建使用 package.json 中的 build 与 start 脚本
+项目页（仓库名作为路径）：
 
-## 环境变量
+`https://durantjames211-creator.github.io/kaoyan-politics-current-affairs/`
 
-- ADMIN_PASSWORD：管理后台密码（默认 change-me）
-- CRON_SECRET：保护 POST /api/cron/sync 的密钥
+## 启用 GitHub Pages
+
+1. 仓库设为 Public（免费 Pages 需要）
+2. Settings → Pages → Build and deployment → Source 选 GitHub Actions
+3. 推送 main 或在 Actions 中手动运行 Sync and Deploy Pages
+4. 首次部署后按上面的 URL 访问（注意带仓库名路径）
+
+## 本地开发
+
+```bash
+npm install
+npm run dev
+```
+
+开发地址带 basePath：`http://localhost:3000/kaoyan-politics-current-affairs/`
+
+管理说明页：`/kaoyan-politics-current-affairs/admin/`
+完整写入类管理请在本地开发模式（静态 Pages 上无 API）；或编辑 `data/*.json` 后提交。
+
+## 脚本
+
+| 命令 | 说明 |
+|------|------|
+| `npm run dev` | 本地开发（含 API） |
+| `npm run build` | 静态导出到 `out/` |
+| `npm run sync` | 拉取近 24h RSS，upsert，刷新今日已核验 |
+
+## 每日同步（GitHub Actions）
+
+工作流：`.github/workflows/sync-and-deploy.yml`
+
+- 定时：每天 UTC 12:00（约北京时间 20:00）
+- 手动：Actions → Sync and Deploy Pages → Run workflow
+- 流程：同步脚本更新 data → 有变更则提交 → 构建 out/ → 官方 Pages 部署
+- 同步复用 `src/lib/sync.ts`（经 scripts + tsx）
+- 即使 0 条新增也会更新 `lastVerifiedAt`（今日已核验）
+
+静态站在构建时读入 `data/*.json`，同步并重新部署后同一公开 URL 即更新。
 
 ## 功能
 
 - 今日已核验、同步状态、本周必看、周年专题、模块筛选、搜索
-- 同步仅收录过去 24 小时发布的条目
-- 按 sourceUrl 新增或修订（upsert），刷新模块/考点/周年联动
-- 无新增时仍刷新今日已核验
-- 管理后台支持图片上传到 public/uploads/
-- 数据文件：data/affairs.json、anniversaries.json、sync-meta.json
+- 近 24 小时 RSS；按 sourceUrl upsert
+- 图片：public/uploads 或远程 URL
+- 数据：data/affairs.json、anniversaries.json、sync-meta.json
 
-## 同一公开 URL 每日更新
+## 关于 Vercel
 
-将站点部署到固定域名后，用定时任务请求该域名的 /api/cron/sync，并在请求头中携带 CRON_SECRET。
-内容写入 data/*.json，同一公开 URL 即可看到更新。
-仓库含 vercel.json（每日 UTC 01:00）。
-注意：纯 Serverless 磁盘不持久；长期自更新请用带持久盘的主机，或同步后提交 data/ 再部署到同一项目。
+`vercel.json` 为历史配置，本 GitHub Pages 路径不使用。
 
-本地可用管理后台「立即同步」，或对本地服务调用 /api/cron/sync。
+## 限制
 
-## 同步规则
-
-1. 公开 RSS，按发布时间过滤近 24 小时
-2. sourceUrl upsert（新增或修订）
-3. 自动刷新模块标签、考点提示、周年联动；本周必看随数据更新
-4. 无论是否有新增，都写入 lastVerifiedAt（今日已核验）
-
-## 与大模型
-
-运行时不调用 ChatGPT、Grok 或其他大模型 API。
+- Pages 纯静态：线上无登录后台、无上传；立即同步请用 Actions
+- images.unoptimized；basePath 为 `/kaoyan-politics-current-affairs`
