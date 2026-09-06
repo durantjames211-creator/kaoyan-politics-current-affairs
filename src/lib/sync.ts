@@ -243,12 +243,17 @@ export async function runSync(): Promise<SyncMeta> {
     fetched += result.items.length;
     for (const item of result.items) {
       const text = `${item.title} ${item.summary}`;
-      const modules = tagModules(text);
+      const modules = tagModules(item.title, item.summary);
       const matched = matchAnniversaries(text, anniversaries);
       const anniversaryIds = matched.map((a) => a.id);
       const examTips = buildExamTips(
         modules,
-        matched.map((a) => a.title)
+        matched.map((a) => a.title),
+        {
+          title: item.title,
+          summary: item.summary,
+          anniversaries: matched,
+        }
       );
 
       const idx = byUrl.get(item.sourceUrl);
@@ -296,22 +301,24 @@ export async function runSync(): Promise<SyncMeta> {
     }
   }
 
-  // Second pass: for ALL affairs (incl. seeds), refresh module/anniversary联动 lightly
-  // so homepage filters & 联动 stay consistent after each sync.
+  // Second pass: ALWAYS re-tag modules + regenerate exam tips for ALL affairs
+  // so homepage filters & 答题表述 stay consistent after rule upgrades / each sync.
   for (let i = 0; i < next.length; i++) {
     const a = next[i];
     const text = `${a.title} ${a.summary}`;
-    const modules = a.modules?.length ? a.modules : tagModules(text);
+    const modules = tagModules(a.title, a.summary);
     const matched = matchAnniversaries(text, anniversaries);
     const anniversaryIds =
       matched.length > 0 ? matched.map((x) => x.id) : a.anniversaryIds || [];
-    const examTips =
-      a.examTips && !a.sourceUrl
-        ? a.examTips
-        : buildExamTips(
-            modules,
-            matched.map((x) => x.title)
-          );
+    const examTips = buildExamTips(
+      modules,
+      matched.map((x) => x.title),
+      {
+        title: a.title,
+        summary: a.summary,
+        anniversaries: matched,
+      }
+    );
     next[i] = {
       ...a,
       modules,

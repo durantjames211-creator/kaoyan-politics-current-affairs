@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import type { Affair, Anniversary, ModuleTag, SyncMeta } from "@/lib/types";
 import { MODULE_TAGS } from "@/lib/types";
 import { mediaUrl } from "@/lib/basePath";
+import { parseExamTipBullets } from "@/lib/modules";
 
 interface Props {
   affairs: Affair[];
@@ -360,19 +361,40 @@ export default function HomeClient({
                       {a.summary}
                     </p>
                     <p className="mt-2 text-xs text-slate-400">
-                      {a.date} · {a.source} · 点击展开答题提示
+                      {a.date} · {a.source} · 点击展开答题可用表述
                     </p>
                   </div>
                 </button>
                 {open && (
                   <div className="border-t border-slate-100 bg-slate-50/80 px-5 py-4">
                     <p className="text-sm font-semibold text-slate-700">
-                      答题 / 复习提示
+                      答题可用表述
                     </p>
-                    <p className="prose-cn mt-1 text-sm text-slate-600">
-                      {a.examTips ||
-                        "暂无提示，建议结合教材章节与领导人重要讲话原文。"}
-                    </p>
+                    {(() => {
+                      const tips = parseExamTipBullets(a.examTips);
+                      if (tips.length === 0) {
+                        return (
+                          <p className="prose-cn mt-1 text-sm text-slate-600">
+                            暂无提示，建议结合教材章节与领导人重要讲话原文。
+                          </p>
+                        );
+                      }
+                      return (
+                        <ul className="mt-2 space-y-2">
+                          {tips.map((tip) => (
+                            <li
+                              key={tip}
+                              className="flex gap-2 rounded-lg border border-red-100 bg-white px-3 py-2 text-sm leading-relaxed text-slate-700"
+                            >
+                              <span className="mt-0.5 shrink-0 font-bold text-red-700">
+                                ·
+                              </span>
+                              <span className="prose-cn">{tip}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      );
+                    })()}
                     {a.anniversaryIds && a.anniversaryIds.length > 0 && (
                       <div className="mt-3 rounded-lg border border-amber-100 bg-amber-50/70 p-3">
                         <p className="text-sm font-semibold text-amber-900">
