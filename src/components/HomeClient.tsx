@@ -12,8 +12,24 @@ interface Props {
   syncMeta: SyncMeta;
 }
 
+const TARGET_YEAR = 2026;
+
 function monthKey(date: string) {
   return date.slice(0, 7);
+}
+
+function dayPart(date: string) {
+  const parts = date.split("-");
+  return parts[2] || date;
+}
+
+function monthPart(date: string) {
+  const parts = date.split("-");
+  return parts.length >= 2 ? `${parts[0]}.${parts[1]}` : date;
+}
+
+function anniversaryYears(year: number) {
+  return TARGET_YEAR - year;
 }
 
 export default function HomeClient({
@@ -25,6 +41,7 @@ export default function HomeClient({
   const [month, setMonth] = useState<string>("全部");
   const [q, setQ] = useState("");
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [annScope, setAnnScope] = useState<"核心" | "全部">("核心");
 
   const months = useMemo(() => {
     const set = new Set(affairs.map((a) => monthKey(a.date)));
@@ -63,6 +80,11 @@ export default function HomeClient({
     [anniversaries]
   );
 
+  const visibleAnn = useMemo(() => {
+    if (annScope === "全部") return sortedAnn;
+    return sortedAnn.filter((a) => a.importance === "核心");
+  }, [sortedAnn, annScope]);
+
   const annById = useMemo(() => {
     const m = new Map<string, Anniversary>();
     anniversaries.forEach((a) => m.set(a.id, a));
@@ -80,189 +102,249 @@ export default function HomeClient({
       })
     : null;
 
+  const metricVerified = verifiedLabel
+    ? verifiedLabel.replace(/\//g, ".").slice(0, 10)
+    : "—";
+
+  const syncTitle =
+    syncMeta.lastStatus === "ok"
+      ? verifiedLabel
+        ? `今日已核验 · ${verifiedLabel}（上海）`
+        : "同步正常"
+      : syncMeta.lastStatus === "error"
+        ? "同步异常，请检查源站或 Actions"
+        : "等待首次自动核验";
+
+  const syncDotClass =
+    syncMeta.lastStatus === "ok"
+      ? "sync-dot"
+      : syncMeta.lastStatus === "error"
+        ? "sync-dot error"
+        : "sync-dot warn";
+
   return (
-    <div className="mx-auto max-w-6xl px-4 pb-16">
-      <section className="pb-8 pt-10">
-        <div className="card overflow-hidden">
-          <div className="grid gap-6 p-6 md:grid-cols-[1.4fr_1fr] md:p-8">
-            <div>
-              <p className="text-sm font-medium text-red-700">2026 考研政治专项</p>
-              <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-900 md:text-4xl">
-                考研政治 · 时政月鉴
-              </h1>
-              <p className="prose-cn mt-3 max-w-xl text-slate-600">
-                汇集近 24
-                小时权威时政与重大周年节点，按史纲 / 毛中特 / 思修 / 形策 /
-                习思想筛选。站点以 JSON
-                文件持久化；GitHub Actions 每日同步后部署到同一 Pages URL，运行时不依赖大模型。
-              </p>
-              <div className="mt-5 flex flex-wrap gap-3">
-                <a
-                  href="#week"
-                  className="rounded-full bg-red-700 px-4 py-2 text-sm font-medium text-white hover:bg-red-800"
-                >
-                  看本周必看
-                </a>
-                <a
-                  href="#anniversaries"
-                  className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:border-red-300"
-                >
-                  周年专题
-                </a>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <Metric label="时政条目" value={String(affairs.length)} />
-              <Metric label="覆盖月份" value={String(months.length || 1)} />
-              <Metric label="周年节点" value={String(anniversaries.length)} />
-              <Metric label="今日已核验" value={verifiedLabel || "尚未核验"} />
-            </div>
+    <>
+      <header className="hero" aria-label="站点导语">
+        <div className="hero-copy">
+          <p className="eyebrow">CURRENT AFFAIRS ARCHIVE</p>
+          <h1>
+            把每天的时政，
+            <br />
+            <em>沉淀成可检索的脉络。</em>
+          </h1>
+          <p className="hero-intro">
+            汇集近 24 小时权威时政与重大周年节点，按史纲 / 毛中特 / 思修 / 形策 /
+            习思想筛选。站点以 JSON
+            文件持久化；GitHub Actions 每日同步后部署到同一 Pages
+            URL，运行时不依赖大模型。
+          </p>
+          <div className="hero-actions">
+            <a href="#week" className="btn-primary">
+              看本周必看
+            </a>
+            <a href="#anniversaries" className="btn-ghost">
+              周年专题
+            </a>
+            <a href="#affairs" className="btn-ghost">
+              时政速览
+            </a>
           </div>
         </div>
-      </section>
-
-      <section className="mb-8">
-        <div className="card p-5">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <h2 className="text-lg font-semibold">同步状态</h2>
-            <StatusPill status={syncMeta.lastStatus} />
+        <div className="metrics" aria-label="资料库统计">
+          <div className="metric-tile">
+            <strong>{affairs.length}</strong>
+            <span>条已核验</span>
           </div>
-          <div className="mt-3 rounded-lg border border-emerald-100 bg-emerald-50/70 px-3 py-2 text-sm text-emerald-900">
-            <span className="font-semibold">今日已核验：</span>
-            {verifiedLabel ? `${verifiedLabel}（上海）` : "尚未核验 — 请触发同步"}
-            <span className="ml-2 text-xs text-emerald-700/80">
-              （即使当天无重要新增，每次同步也会刷新此刻度）
-            </span>
+          <div className="metric-tile">
+            <strong>{months.length || 1}</strong>
+            <span>个月份</span>
           </div>
-          <p className="mt-2 text-sm text-slate-600">{syncMeta.lastMessage}</p>
-          <div className="mt-3 flex flex-wrap gap-4 text-xs text-slate-500">
-            <span>近24h有效 {syncMeta.lastFetched} 条</span>
-            <span>新增 {syncMeta.lastAdded} 条</span>
-            <span>修订 {syncMeta.lastUpdated ?? 0} 条</span>
-            <span>跳过过期 {syncMeta.lastSkippedOld ?? 0} 条</span>
-            {syncMeta.lastSyncAt && (
-              <span>
-                同步时间{" "}
-                {new Date(syncMeta.lastSyncAt).toLocaleString("zh-CN", {
-                  timeZone: "Asia/Shanghai",
-                })}{" "}
-                （上海）
-              </span>
-            )}
+          <div className="metric-tile">
+            <strong>{anniversaries.length}</strong>
+            <span>周年节点</span>
           </div>
-          {syncMeta.feeds?.length > 0 && (
-            <ul className="mt-3 space-y-1 text-xs text-slate-500">
-              {syncMeta.feeds.map((f) => (
-                <li key={f.url}>
-                  <span className={f.ok ? "text-emerald-600" : "text-rose-600"}>
-                    {f.ok ? "✓" : "✗"}
-                  </span>{" "}
-                  {f.url} — {f.message}
-                </li>
-              ))}
-            </ul>
-          )}
+          <div className="metric-tile">
+            <strong style={{ fontSize: verifiedLabel ? 15 : 26 }}>
+              {metricVerified}
+            </strong>
+            <span>最近核验</span>
+          </div>
         </div>
-      </section>
+      </header>
 
-      <section id="week" className="mb-10 scroll-mt-20">
-        <div className="mb-4 flex items-end justify-between gap-3">
+      <section className="sync-panel" aria-label="自动更新状态">
+        <div className="sync-panel-main">
+          <span className={syncDotClass} aria-hidden />
+          <p>
+            <b>{syncTitle}</b>
+            <small>
+              {syncMeta.lastMessage ||
+                "每日核验后即使没有新增，也会同步刷新网页状态。"}
+            </small>
+          </p>
+        </div>
+        <ul className="sync-stats">
+          <li>
+            <strong>{syncMeta.lastFetched}</strong>
+            <span>近24h有效</span>
+          </li>
+          <li>
+            <strong>{syncMeta.lastAdded}</strong>
+            <span>新增条目</span>
+          </li>
+          <li>
+            <strong>{syncMeta.lastUpdated ?? 0}</strong>
+            <span>修订条目</span>
+          </li>
+          <li>
+            <strong>{weekItems.length}</strong>
+            <span>本周重点</span>
+          </li>
+        </ul>
+      </section>
+      {syncMeta.feeds?.length > 0 && (
+        <ul className="sync-feeds">
+          {syncMeta.feeds.map((f) => (
+            <li key={f.url}>
+              <span className={f.ok ? "ok" : "bad"}>{f.ok ? "✓" : "✗"}</span>{" "}
+              {f.url} — {f.message}
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <section id="week" className="section scroll-mt-20">
+        <div className="section-head">
           <div>
-            <h2 className="text-2xl font-bold">本周必看</h2>
-            <p className="mt-1 text-sm text-slate-500">
-              同步后按发布时间自动刷新；优先展示近两周时政
-            </p>
+            <p className="eyebrow">WEEKLY ESSENTIALS</p>
+            <h2>本周必看</h2>
           </div>
+          <span className="section-aside">最近两周 · 核心时政精选</span>
         </div>
-        <div className="grid gap-4 md:grid-cols-2">
-          {weekItems.map((a) => (
-            <article key={a.id} className="card p-5">
-              <div className="flex flex-wrap gap-2">
-                {a.modules.map((m) => (
-                  <span key={m} className="badge badge-mod">
-                    {m}
+        {weekItems.length === 0 ? (
+          <div className="empty-state">
+            <div className="empty-seal">政</div>
+            <h3>正在整理本周重点…</h3>
+            <p>同步完成后将按发布时间自动刷新。</p>
+          </div>
+        ) : (
+          <div className="weekly-grid">
+            {weekItems.map((a, i) => (
+              <article key={a.id} className="weekly-card">
+                <div className="weekly-rank" aria-hidden>
+                  {String(i + 1).padStart(2, "0")}
+                </div>
+                <div className="weekly-meta">
+                  {a.modules.slice(0, 2).map((m) => (
+                    <span key={m} className="badge badge-mod">
+                      {m}
+                    </span>
+                  ))}
+                  <span style={{ marginLeft: "auto" }}>
+                    {a.date} · {a.source}
                   </span>
-                ))}
-              </div>
-              <h3 className="mt-3 text-lg font-semibold leading-snug">{a.title}</h3>
-              <p className="mt-2 line-clamp-3 text-sm text-slate-600">{a.summary}</p>
-              <div className="mt-3 flex items-center justify-between text-xs text-slate-400">
-                <span>
-                  {a.date} · {a.source}
-                </span>
+                </div>
+                <h3>{a.title}</h3>
+                <p className="line-clamp-4">{a.summary}</p>
                 {a.sourceUrl && (
                   <a
                     href={a.sourceUrl}
                     target="_blank"
                     rel="noreferrer"
-                    className="text-blue-600 hover:underline"
+                    className="link-out"
                   >
-                    来源
+                    查看来源 ↗
                   </a>
                 )}
-              </div>
-            </article>
-          ))}
-        </div>
+              </article>
+            ))}
+          </div>
+        )}
       </section>
 
-      <section id="anniversaries" className="mb-10 scroll-mt-20">
-        <div className="mb-4">
-          <h2 className="text-2xl font-bold">2026考研周年专题</h2>
-          <p className="mt-1 text-sm text-slate-500">
-            核心 / 重点节点 · 知识点 · 考查关联 · 联动复习
+      <section id="anniversaries" className="section scroll-mt-20">
+        <div className="section-head">
+          <div>
+            <p className="eyebrow">2026 ANNIVERSARIES</p>
+            <h2>2026考研周年专题</h2>
+          </div>
+          <span className="section-aside">
+            逢5逢10重要节点 · 直接对应教材知识点
+          </span>
+        </div>
+        <div className="note-panel">
+          <b>复习说明</b>
+          <p>
+            周年不等于必考。本专题按照教材地位、周年整数程度分为「核心、重点」，优先掌握核心节点；联动栏提示与时政条目的复习衔接。
           </p>
         </div>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {sortedAnn.map((ann) => (
-            <article key={ann.id} className="card flex flex-col p-5">
-              <div className="flex items-start justify-between gap-2">
-                <div>
-                  <p className="text-xs text-slate-400">{ann.year} 年</p>
-                  <h3 className="mt-1 text-lg font-bold">{ann.title}</h3>
-                </div>
-                <span
-                  className={`badge ${
-                    ann.importance === "核心" ? "badge-core" : "badge-focus"
+        <div className="ann-controls" role="group" aria-label="周年专题显示范围">
+          <button
+            type="button"
+            className={`chip chip-ink ${annScope === "核心" ? "active" : ""}`}
+            onClick={() => setAnnScope("核心")}
+          >
+            核心优先
+          </button>
+          <button
+            type="button"
+            className={`chip chip-ink ${annScope === "全部" ? "active" : ""}`}
+            onClick={() => setAnnScope("全部")}
+          >
+            全部节点
+          </button>
+          <span className="count">{visibleAnn.length} 个周年节点</span>
+        </div>
+        <div className="anniversary-grid">
+          {visibleAnn.map((ann) => (
+            <article key={ann.id} className="anniversary-card">
+              <div className="anniversary-year">
+                <strong>{ann.year}</strong>
+                <span>
+                  → {TARGET_YEAR} · {anniversaryYears(ann.year)}周年
+                </span>
+                <b
+                  className={`imp badge ${
+                    ann.importance === "核心"
+                      ? "badge-core"
+                      : ann.importance === "重点"
+                        ? "badge-focus"
+                        : "badge-know"
                   }`}
                 >
                   {ann.importance}
-                </span>
+                </b>
               </div>
-              <div className="mt-3 flex flex-wrap gap-1.5">
+              <h3>{ann.title}</h3>
+              <div className="anniversary-modules">
                 {ann.modules.map((m) => (
                   <span key={m} className="badge badge-mod">
                     {m}
                   </span>
                 ))}
               </div>
-              <p className="prose-cn mt-3 text-sm text-slate-600">{ann.summary}</p>
-              <div className="mt-3">
-                <p className="text-xs font-semibold text-slate-500">对应知识点</p>
-                <ul className="mt-1 list-disc space-y-1 pl-4 text-sm text-slate-700">
+              <p className="anniversary-summary">{ann.summary}</p>
+              <div className="knowledge-points">
+                <b>对应知识点</b>
+                <ul>
                   {ann.knowledgePoints.map((k) => (
                     <li key={k}>{k}</li>
                   ))}
                 </ul>
               </div>
-              <div className="mt-3 rounded-lg bg-slate-50 p-3 text-sm">
-                <p className="font-semibold text-slate-700">考查关联</p>
-                <p className="mt-1 text-slate-600">{ann.examRelation}</p>
+              <div className="anniversary-angle">
+                <b>考查关联</b>
+                <p>{ann.examRelation}</p>
               </div>
               {ann.linkage && (
-                <div className="mt-2 rounded-lg border border-amber-100 bg-amber-50/60 p-3 text-sm">
-                  <p className="font-semibold text-amber-800">联动</p>
-                  <p className="mt-1 text-amber-900/80">{ann.linkage}</p>
+                <div className="anniversary-linkage">
+                  <b>2026 复习联动</b>
+                  {ann.linkage}
                 </div>
               )}
               {ann.officialUrl && (
-                <a
-                  href={ann.officialUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="mt-auto pt-4 text-sm text-blue-600 hover:underline"
-                >
-                  权威参考链接 →
+                <a href={ann.officialUrl} target="_blank" rel="noreferrer">
+                  核验权威资料 ↗
                 </a>
               )}
             </article>
@@ -270,16 +352,31 @@ export default function HomeClient({
         </div>
       </section>
 
-      <section id="affairs" className="scroll-mt-20">
-        <div className="mb-4">
-          <h2 className="text-2xl font-bold">时政速览</h2>
-          <p className="mt-1 text-sm text-slate-500">
-            模块筛选 · 月份 · 搜索 · 展开看答题提示与周年联动
-          </p>
+      <section id="affairs" className="workspace scroll-mt-20">
+        <div className="section-head" style={{ marginBottom: 24 }}>
+          <div>
+            <p className="eyebrow">CURRENT AFFAIRS</p>
+            <h2>时政速览</h2>
+          </div>
+          <span className="section-aside">
+            模块筛选 · 月份 · 搜索 · 展开看答题提示
+          </span>
         </div>
 
-        <div className="card mb-4 space-y-3 p-4">
-          <div className="flex flex-wrap gap-2">
+        <div className="filter-panel">
+          <div className="search-box">
+            <span className="search-icon" aria-hidden>
+              搜
+            </span>
+            <input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="搜索标题 / 摘要 / 考点提示…"
+              aria-label="搜索时政"
+            />
+          </div>
+          <div className="chip-row">
+            <span className="chip-row-label">MODULE</span>
             <button
               type="button"
               className={`chip ${module === "全部" ? "active" : ""}`}
@@ -298,7 +395,8 @@ export default function HomeClient({
               </button>
             ))}
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="chip-row">
+            <span className="chip-row-label">MONTH</span>
             <button
               type="button"
               className={`chip ${month === "全部" ? "active" : ""}`}
@@ -317,153 +415,124 @@ export default function HomeClient({
               </button>
             ))}
           </div>
-          <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="搜索标题 / 摘要 / 考点提示…"
-            className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm outline-none ring-red-200 focus:ring-2"
-          />
         </div>
 
-        <div className="space-y-3">
-          {filtered.length === 0 && (
-            <div className="card p-8 text-center text-slate-500">
-              暂无匹配条目。可调整筛选，或在管理后台同步 / 新增。
-            </div>
-          )}
-          {filtered.map((a) => {
-            const open = expanded === a.id;
-            return (
-              <article key={a.id} className="card overflow-hidden">
-                <button
-                  type="button"
-                  className="flex w-full flex-col gap-3 p-5 text-left hover:bg-slate-50/60 md:flex-row"
-                  onClick={() => setExpanded(open ? null : a.id)}
-                >
-                  {a.imageUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={mediaUrl(a.imageUrl)}
-                      alt=""
-                      className="h-28 w-full rounded-lg object-cover md:h-24 md:w-36"
-                    />
-                  ) : null}
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap gap-1.5">
-                      {a.modules.map((m) => (
-                        <span key={m} className="badge badge-mod">
-                          {m}
-                        </span>
-                      ))}
-                    </div>
-                    <h3 className="mt-2 text-lg font-semibold">{a.title}</h3>
-                    <p className="mt-1 line-clamp-2 text-sm text-slate-600">
-                      {a.summary}
-                    </p>
-                    <p className="mt-2 text-xs text-slate-400">
-                      {a.date} · {a.source} · 点击展开答题可用表述
-                    </p>
+        <div className="section-head" style={{ marginTop: 48, marginBottom: 8 }}>
+          <div>
+            <p className="eyebrow">ARCHIVE</p>
+            <h2 style={{ fontSize: 28 }}>检索结果</h2>
+          </div>
+          <span className="section-aside">{filtered.length} 条</span>
+        </div>
+
+        {filtered.length === 0 ? (
+          <div className="empty-state">
+            <div className="empty-seal">政</div>
+            <h3>暂无匹配条目</h3>
+            <p>可调整筛选，或在管理后台同步 / 新增。</p>
+          </div>
+        ) : (
+          <div className="event-list">
+            {filtered.map((a) => {
+              const open = expanded === a.id;
+              return (
+                <article key={a.id} className="event-card">
+                  <div className="event-date">
+                    <strong>{dayPart(a.date)}</strong>
+                    <span>{monthPart(a.date)}</span>
                   </div>
-                </button>
-                {open && (
-                  <div className="border-t border-slate-100 bg-slate-50/80 px-5 py-4">
-                    <p className="text-sm font-semibold text-slate-700">
-                      答题可用表述
-                    </p>
-                    {(() => {
-                      const tips = parseExamTipBullets(a.examTips);
-                      if (tips.length === 0) {
-                        return (
-                          <p className="prose-cn mt-1 text-sm text-slate-600">
-                            暂无提示，建议结合教材章节与领导人重要讲话原文。
-                          </p>
-                        );
-                      }
-                      return (
-                        <ul className="mt-2 space-y-2">
-                          {tips.map((tip) => (
-                            <li
-                              key={tip}
-                              className="flex gap-2 rounded-lg border border-red-100 bg-white px-3 py-2 text-sm leading-relaxed text-slate-700"
-                            >
-                              <span className="mt-0.5 shrink-0 font-bold text-red-700">
-                                ·
-                              </span>
-                              <span className="prose-cn">{tip}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      );
-                    })()}
-                    {a.anniversaryIds && a.anniversaryIds.length > 0 && (
-                      <div className="mt-3 rounded-lg border border-amber-100 bg-amber-50/70 p-3">
-                        <p className="text-sm font-semibold text-amber-900">
-                          周年联动
-                        </p>
-                        <ul className="mt-1 space-y-1 text-sm text-amber-950/80">
-                          {a.anniversaryIds.map((id) => {
-                            const ann = annById.get(id);
-                            return (
-                              <li key={id}>
-                                {ann
-                                  ? `${ann.year} · ${ann.title}（${ann.importance}）`
-                                  : id}
-                              </li>
-                            );
-                          })}
-                        </ul>
-                      </div>
-                    )}
-                    {a.sourceUrl && (
-                      <a
-                        href={a.sourceUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="mt-3 inline-block text-sm text-blue-600 hover:underline"
+                  <div className="event-body-wrap">
+                    <div className="event-accent" aria-hidden />
+                    <div className="event-body" style={{ flex: 1, minWidth: 0 }}>
+                      <button
+                        type="button"
+                        className="event-toggle-btn"
+                        onClick={() => setExpanded(open ? null : a.id)}
+                        aria-expanded={open}
                       >
-                        查看来源原文 →
-                      </a>
-                    )}
+                        {a.imageUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={mediaUrl(a.imageUrl)}
+                            alt=""
+                            className="event-thumb"
+                          />
+                        ) : null}
+                        <div className="event-meta">
+                          {a.modules.map((m) => (
+                            <span key={m} className="badge badge-mod">
+                              {m}
+                            </span>
+                          ))}
+                          <span>
+                            {a.source}
+                            {open ? " · 收起提示" : " · 展开答题可用表述"}
+                          </span>
+                        </div>
+                        <h3>{a.title}</h3>
+                        <p className={open ? undefined : "line-clamp-2"}>
+                          {a.summary}
+                        </p>
+                      </button>
+                      {open && (
+                        <div className="event-extra">
+                          <div className="answer-material">
+                            <b>答题可用表述</b>
+                            {(() => {
+                              const tips = parseExamTipBullets(a.examTips);
+                              if (tips.length === 0) {
+                                return (
+                                  <p className="prose-cn" style={{ margin: 0, fontSize: 14 }}>
+                                    暂无提示，建议结合教材章节与领导人重要讲话原文。
+                                  </p>
+                                );
+                              }
+                              return (
+                                <ul>
+                                  {tips.map((tip) => (
+                                    <li key={tip}>{tip}</li>
+                                  ))}
+                                </ul>
+                              );
+                            })()}
+                          </div>
+                          {a.anniversaryIds && a.anniversaryIds.length > 0 && (
+                            <div className="ann-link-box">
+                              <b>周年联动</b>
+                              <ul style={{ margin: "6px 0 0", paddingLeft: 18 }}>
+                                {a.anniversaryIds.map((id) => {
+                                  const ann = annById.get(id);
+                                  return (
+                                    <li key={id}>
+                                      {ann
+                                        ? `${ann.year} · ${ann.title}（${ann.importance}）`
+                                        : id}
+                                    </li>
+                                  );
+                                })}
+                              </ul>
+                            </div>
+                          )}
+                          {a.sourceUrl && (
+                            <a
+                              href={a.sourceUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="event-source"
+                            >
+                              查看来源原文 →
+                            </a>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                )}
-              </article>
-            );
-          })}
-        </div>
+                </article>
+              );
+            })}
+          </div>
+        )}
       </section>
-    </div>
-  );
-}
-
-function Metric({
-  label,
-  value,
-  className = "",
-}: {
-  label: string;
-  value: string;
-  className?: string;
-}) {
-  return (
-    <div className={`rounded-xl bg-slate-50 p-4 ${className}`}>
-      <p className="text-xs text-slate-500">{label}</p>
-      <p className="mt-1 break-all text-xl font-bold text-slate-900">{value}</p>
-    </div>
-  );
-}
-
-function StatusPill({ status }: { status: SyncMeta["lastStatus"] }) {
-  const map = {
-    ok: "bg-emerald-50 text-emerald-700 border-emerald-200",
-    error: "bg-rose-50 text-rose-700 border-rose-200",
-    never: "bg-slate-50 text-slate-600 border-slate-200",
-  } as const;
-  const label = { ok: "正常", error: "异常", never: "未同步" } as const;
-  return (
-    <span
-      className={`rounded-full border px-3 py-1 text-xs font-medium ${map[status]}`}
-    >
-      {label[status]}
-    </span>
+    </>
   );
 }
