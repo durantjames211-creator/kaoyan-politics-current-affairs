@@ -1,10 +1,10 @@
 {
-  "lastSyncAt": "2026-09-16T12:14:29.359Z",
-  "lastVerifiedAt": "2026-09-16T12:14:29.359Z",
+  "lastSyncAt": "2026-09-17T12:14:18.588Z",
+  "lastVerifiedAt": "2026-09-17T12:14:18.588Z",
   "lastStatus": "ok",
-  "lastMessage": "近24小时核验完成：拉取有效 140 条，新增 139，修订 0，跳过过期约 80",
+  "lastMessage": "近24小时核验完成：拉取有效 140 条，新增 140，修订 0，跳过过期约 80",
   "lastFetched": 140,
-  "lastAdded": 139,
+  "lastAdded": 140,
   "lastUpdated": 0,
   "lastSkippedOld": 80,
   "feeds": [
