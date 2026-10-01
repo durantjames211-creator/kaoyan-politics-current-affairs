@@ -1,12 +1,12 @@
 {
-  "lastSyncAt": "2026-09-30T12:15:22.260Z",
-  "lastVerifiedAt": "2026-09-30T12:15:22.260Z",
+  "lastSyncAt": "2026-10-01T12:16:00.877Z",
+  "lastVerifiedAt": "2026-10-01T12:16:00.877Z",
   "lastStatus": "ok",
-  "lastMessage": "近24小时核验完成：拉取有效 140 条，新增 140，修订 0，跳过过期约 80",
-  "lastFetched": 140,
-  "lastAdded": 140,
+  "lastMessage": "近24小时核验完成：拉取有效 89 条，新增 89，修订 0，跳过过期约 131",
+  "lastFetched": 89,
+  "lastAdded": 89,
   "lastUpdated": 0,
-  "lastSkippedOld": 80,
+  "lastSkippedOld": 131,
   "feeds": [
     {
       "url": "https://www.people.com.cn/rss/politics.xml",
@@ -21,12 +21,12 @@
     {
       "url": "https://www.chinanews.com.cn/rss/importnews.xml",
       "ok": true,
-      "message": "近24h 30 条（跳过过期 0）"
+      "message": "近24h 19 条（跳过过期 11）"
     },
     {
       "url": "https://feedx.net/rss/people.xml",
       "ok": true,
-      "message": "近24h 80 条（跳过过期 0）"
+      "message": "近24h 40 条（跳过过期 40）"
     }
   ]
 }
